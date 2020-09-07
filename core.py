@@ -4,83 +4,12 @@ import schedule
 import requests
 import lxml.html as html
 import unicodedata
-from config import telegram_api_key
+from config import telegram_api_key, members_list, stickers_list
+from helpers import *
 import time
 
 
 bot = telebot.TeleBot(telegram_api_key)
-kinochat_id = -1001323316776
-members_list = [
-    {
-        'username': '@molotoko',
-        'gender': 'female'
-    },
-    {
-        'username': '@HKEY47',
-        'gender': 'male'
-    },
-    {
-        'username': '@mikmall',
-        'gender': 'male'
-    },
-    {
-        'username': '@madurmanov',
-        'gender': 'male'
-    },
-    {
-        'username': '@fyvdlo',
-        'gender': 'male'
-    },
-    {
-        'username': '@wilddeer',
-        'gender': 'male'
-    },
-    {
-        'username': '@Henpukuhime',
-        'gender': 'female'
-    },
-    {
-        'username': '@anechka_persik',
-        'gender': 'female'
-    },
-    {
-        'username': '@sleepercat0_0',
-        'gender': 'female'
-    },
-    {
-        'username': '@Milli_M',
-        'gender': 'female'
-    },
-    {
-        'username': '@Dart_gedark',
-        'gender': 'male'
-    },
-    {
-        'username': '@nogpyra',
-        'gender': 'female'
-    },
-    {
-        'username': '@tsynali',
-        'gender': 'female'
-    },
-    {
-        'username': '@kokos_89',
-        'gender': 'male'
-    },
-    {
-        'username': '@beforescriptum',
-        'gender': 'female'
-    },
-    {
-        'username': '@MoshWayne',
-        'gender': 'male'
-    }
-
-]
-stickers_list = {
-    'droed': 'CAACAgIAAxkBAAO1Xrs0GAK_ts-_2AG5lhTO2VwRTS4AAl0BAAJEyQkHfIbn433Oi2gZBA',
-    'droed_work': 'CAACAgIAAxkBAAOvXrszrgvwIgKSJj105YntGMYTL7cAAl4BAAJEyQkHQhFYn9ziwn4ZBA'
-}
 
 
 @bot.message_handler(commands=['start'])
@@ -205,32 +134,6 @@ def go_to_work(message):
     bot.send_sticker(message.chat.id, stickers_list['droed_work'])
 
 
-def get_random_actor(gender):
-    link = 'https://www.imdb.com/search/name/?groups=oscar_winner,oscar_nominee&count=100'
-
-    if gender:
-        link = f'{link}&gender={gender}'
-
-    actors_request = requests.get(link)
-    actors_tree = html.fromstring(actors_request.text)
-    actors = actors_tree.find_class('lister-item')
-
-    actor = random.choice(actors).find_class('lister-item-header')[0].find('a')
-    actor_name = actor.text_content().strip()
-    actor_href = actor.attrib['href']
-    actor_link = f'https://www.imdb.com{actor_href}'
-
-    actor_request = requests.get(actor_link)
-    actor_tree = html.fromstring(actor_request.text)
-    actor_death_info = actor_tree.xpath('//div[@id="name-death-info"]')
-
-    return {
-        'name': actor_name,
-        'link': actor_link,
-        'alive': False if len(actor_death_info) else True
-    }
-
-
 @bot.message_handler(commands=['date'])
 def random_actor(message):
     username = f'@{message.from_user.username}'
@@ -290,38 +193,6 @@ def born_today(message):
     )
 
 
-def born_today_cron():
-    request_link = 'https://www.imdb.com/feature/bornondate/'
-    page = requests.get(request_link)
-    tree = html.fromstring(page.text)
-
-    born_list = []
-    celebrities = tree.find_class('lister-item')[:5]
-
-    for celebrity in celebrities:
-        celebrity_anchor = celebrity.find_class('lister-item-header')[0].find('a')
-        celebrity_name = celebrity_anchor.text_content().strip()
-        celebrity_link = celebrity_anchor.attrib['href']
-        born_list.append([celebrity_name, celebrity_link])
-
-    born_message = f'Сегодня родились знаменитости:\n'
-    for celebrity in born_list:
-        born_message += f'[{celebrity[0]}](https://www.imdb.com{celebrity[1]})\n'
-
-    bot.send_message(
-        kinochat_id,
-        born_message,
-        parse_mode='Markdown'
-    )
-
-
-def notifications():
-    schedule.every().day.at('10:00').do(born_today_cron())
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
-
 @bot.message_handler(content_types=['text'])
 def send_text(message):
     hello_list = ['привет', 'hello', 'hi', 'приветствую', 'здравствуй', 'здравствуйте', 'хелло', 'хэлло', 'йоу',
@@ -331,9 +202,9 @@ def send_text(message):
     elif message.text.lower() == 'пока':
         bot.send_message(message.chat.id, 'I\'ll be back!', reply_to_message_id=message.message_id)
     elif 'дроед' in message.text.lower():
-        bot.send_sticker(message.chat.id, 'CAACAgIAAxkBAAOvXrszrgvwIgKSJj105YntGMYTL7cAAl4BAAJEyQkHQhFYn9ziwn4ZBA')
+        bot.send_sticker(message.chat.id, stickers_list['droed_work'])
     elif 'дроид' in message.text.lower():
-        bot.send_sticker(message.chat.id, 'CAACAgIAAxkBAAOvXrszrgvwIgKSJj105YntGMYTL7cAAl4BAAJEyQkHQhFYn9ziwn4ZBA')
+        bot.send_sticker(message.chat.id, stickers_list['droed_work'])
 
 
 # @bot.message_handler(content_types=['sticker'])
